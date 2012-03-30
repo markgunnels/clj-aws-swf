@@ -14,3 +14,4 @@
 .#*
 resources/aws.properties
 .lein-plugins
+env.sh

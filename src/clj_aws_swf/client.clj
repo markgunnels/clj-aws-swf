@@ -12,13 +12,13 @@
 
 (defn create
   ([]
-     (create (get-property :access_id)
-             (get-property :secret_key)))
+     (create (get-property "ACCESS_ID")
+             (get-property "SECRET_KEY")))
   ([access-id secret-key]
      (create access-id secret-key (* 70 1000)))
   ([access-id secret-key socket-timeout]
      (let [config (create-client-configuration socket-timeout)
            aws-credentials (BasicAWSCredentials. access-id secret-key)
            client (AmazonSimpleWorkflowClient. aws-credentials config)]
-       (.setEndpoint client (get-property :endpoint))
+       (.setEndpoint client (get-property "ENDPOINT"))
        client)))
