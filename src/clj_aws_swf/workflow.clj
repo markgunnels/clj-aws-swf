@@ -95,4 +95,11 @@
       (.setStartTimeFilter t-filter))
     (.countOpenWorkflowExecutions swf-service request)))
 
+(defn count-workflow-executions
+  [domain workflow-id]
+  (let [oc (.getCount
+            (count-open-workflow-executions domain workflow-id)) 
+        cc (.getCount
+            (count-closed-workflow-executions domain workflow-id))]
+    (+ oc cc)))
 
