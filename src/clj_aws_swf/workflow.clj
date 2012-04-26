@@ -56,7 +56,6 @@
       (.setExecution wf-execution))
     (.getWorkflowExecutionHistory swf-service request)))
 
-
 (defn twenty-years-ago
   []
   (let [d (java.util.Date.)]
