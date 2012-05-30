@@ -1,5 +1,6 @@
 (ns clj-aws-swf.activity
   (:require [clj-aws-swf.client :as c]
+            [clj-aws-swf.workflow :as w]
             [clj-aws-swf.common :as common])
   (:import [com.amazonaws.services.simpleworkflow.model
             TaskList
@@ -7,7 +8,9 @@
             ActivityType
             RespondActivityTaskCompletedRequest
             RespondActivityTaskFailedRequest
-            RespondActivityTaskCanceledRequest]))
+            RespondActivityTaskCanceledRequest
+            RegisterActivityTypeRequest
+            DeprecateActivityTypeRequest]))
 
 (defn poll-for-activity-task
   [task-list-name domain identity]
@@ -47,3 +50,56 @@
       (.setTaskToken task-token)
       (.setDetails details))
     (.respondActivityTaskCanceled swf-service activity-task-canceled)))
+
+(defn- create-task-list
+  [name]
+  (let [task-list (TaskList.)]
+    (.setName task-list name)))
+
+(defn- create-register-activity-type-request
+  [domain name version description
+   default-task-schedule-start
+   default-task-schedule-end
+   default-task-start-to-end
+   task-list-name]
+  (let [request (RegisterActivityTypeRequest.)]
+    (doto request
+      (.setDomain domain)
+      (.setName name)
+      (.setVersion version)
+      (.setDescription description)
+      (.setDefaultTaskScheduleToStartTimeout default-task-schedule-start)
+      (.setDefaultTaskScheduleToCloseTimeout default-task-schedule-end)
+      (.setDefaultTaskStartToCloseTimeout default-task-start-to-end)
+      (.setDefaultTaskList (create-task-list task-list-name)))))
+
+(defn register
+  [domain name version description
+   default-task-schedule-start
+   default-task-schedule-end
+   default-task-start-to-end
+   task-list-name]
+  (let [service (c/create)
+        request (create-register-activity-type-request
+                 domain name version description
+                 default-task-schedule-start
+                 default-task-schedule-end
+                 default-task-start-to-end
+                 task-list-name)]
+    (.registerActivityType service request)))
+
+(defn- create-deprecate-activity-type-request
+  [domain name version]
+  (let [request (DeprecateActivityTypeRequest.)
+        activity-type (common/create-activity-type name
+                                                   version)]
+    (doto request
+      (.setDomain domain)
+      (.setActivityType activity-type))))
+
+(defn deprecate
+  [domain name version ]
+  (let [service (c/create)
+        request (create-deprecate-activity-type-request
+                 domain name version)]
+    (.deprecateActivityType service request)))

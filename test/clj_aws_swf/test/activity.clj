@@ -1,12 +1,13 @@
 (ns clj-aws-swf.test.activity
-  (:use [clj-aws-swf.workflow]
+  (:use 
         [clj-aws-swf.decision]
         [clj-aws-swf.activity])
   (:use [clojure.test])
-  (:require [clj-aws-swf.utils :as u]))
+  (:require [clj-aws-swf.utils :as u]
+            [clj-aws-swf.workflow :as w]))
 
 (deftest test-complete-activity-task
-  (let [swe-r (start-workflow-execution "HelloWorld"
+  (let [swe-r (w/start-workflow-execution "HelloWorld"
                                     "1.1"
                                     "2"
                                     "HelloWorld"
@@ -32,7 +33,7 @@
     (is (not= nil cat-r))))
 
 (deftest test-cancel-workflow-task
-  (let [swe-r (start-workflow-execution "HelloWorld"
+  (let [swe-r (w/start-workflow-execution "HelloWorld"
                                     "1.1"
                                     "2"
                                     "HelloWorld"
@@ -58,7 +59,7 @@
     (is (not= nil cat-r))))
 
 (deftest test-fail-workflow-task
-  (let [swe-r (start-workflow-execution "HelloWorld"
+  (let [swe-r (w/start-workflow-execution "HelloWorld"
                                     "1.1"
                                     "2"
                                     "HelloWorld"
@@ -83,3 +84,11 @@
     (println (bean swe-r))
     (println fat-r)
     (is (not= nil fat-r))))
+
+(deftest test-register-and-deprecate
+  (let [v (str (rand-int 9999999)) 
+        r (register "HelloWorld" "wassup" v "what"
+                    "1000" "1000" "1000" "sup")
+        d (deprecate "HelloWorld" "wassup" v)]
+    (is (= nil r))
+    (is (= nil d))))

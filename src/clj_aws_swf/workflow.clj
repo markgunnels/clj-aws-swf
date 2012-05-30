@@ -1,6 +1,7 @@
 (ns clj-aws-swf.workflow
   (:use clj-aws-swf.utils)
-  (:require [clj-aws-swf.client :as c])
+  (:require [clj-aws-swf.client :as c]
+            [clj-aws-swf.common :as common])
   (:import [com.amazonaws.services.simpleworkflow.model
             StartWorkflowExecutionRequest
             WorkflowType
@@ -106,11 +107,6 @@
             (count-closed-workflow-executions domain workflow-id))]
     (+ oc cc)))
 
-(defn- create-task-list
-  [name]
-  (let [task-list (TaskList.)]
-    (.setName task-list name)))
-
 (defn- create-register-workflow-type-request
   [domain name version description default-execution-timeout
    default-task-timeout task-list-name]
@@ -122,7 +118,7 @@
       (.setDescription description)
       (.setDefaultExecutionStartToCloseTimeout default-execution-timeout)
       (.setDefaultTaskStartToCloseTimeout default-task-timeout)
-      (.setDefaultTaskList (create-task-list task-list-name)))))
+      (.setDefaultTaskList (common/create-task-list task-list-name)))))
 
 (defn register
   [domain name version description default-execution-timeout
