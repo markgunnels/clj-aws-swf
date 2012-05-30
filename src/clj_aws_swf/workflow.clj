@@ -4,13 +4,17 @@
   (:import [com.amazonaws.services.simpleworkflow.model
             StartWorkflowExecutionRequest
             WorkflowType
+            RegisterWorkflowTypeRequest
+            DeprecateWorkflowTypeRequest
             TerminateWorkflowExecutionRequest
             GetWorkflowExecutionHistoryRequest
             WorkflowExecution
             WorkflowExecutionFilter
             CountClosedWorkflowExecutionsRequest
             CountOpenWorkflowExecutionsRequest
-            ExecutionTimeFilter]))
+            ExecutionTimeFilter
+            ChildPolicy
+            TaskList]))
 
 (defn- create-workflow-type
   [name version]
@@ -102,3 +106,46 @@
             (count-closed-workflow-executions domain workflow-id))]
     (+ oc cc)))
 
+(defn- create-task-list
+  [name]
+  (let [task-list (TaskList.)]
+    (.setName task-list name)))
+
+(defn- create-register-workflow-type-request
+  [domain name version description default-execution-timeout
+   default-task-timeout task-list-name]
+  (let [request (RegisterWorkflowTypeRequest.)]
+    (doto request
+      (.setDomain domain)
+      (.setName name)
+      (.setVersion version)
+      (.setDescription description)
+      (.setDefaultExecutionStartToCloseTimeout default-execution-timeout)
+      (.setDefaultTaskStartToCloseTimeout default-task-timeout)
+      (.setDefaultTaskList (create-task-list task-list-name)))))
+
+(defn register
+  [domain name version description default-execution-timeout
+   default-task-timeout task-list-name]
+  (let [service (c/create)
+        request (create-register-workflow-type-request
+                 domain name version description
+                 default-execution-timeout
+                 default-task-timeout task-list-name)]
+    (.registerWorkflowType service request)))
+
+
+(defn- create-deprecate-workflow-type-request
+  [domain name version]
+  (let [request (DeprecateWorkflowTypeRequest.)
+        workflow-type (create-workflow-type name version)]
+    (doto request
+      (.setDomain domain)
+      (.setWorkflowType workflow-type))))
+
+(defn deprecate
+  [domain name version ]
+  (let [service (c/create)
+        request (create-deprecate-workflow-type-request
+                 domain name version)]
+    (.deprecateWorkflowType service request)))

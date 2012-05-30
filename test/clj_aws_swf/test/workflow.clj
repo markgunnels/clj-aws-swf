@@ -25,3 +25,11 @@
     (println twe-r)
     (is (= nil twe-r))))
 
+
+(deftest test-register-and-deprecate
+  (let [v (str (rand-int 9999999)) 
+        r (register "HelloWorld" "wassup" v "what"
+                    "1000" "1000" "sup")
+        d (deprecate "HelloWorld" "wassup" v)]
+    (is (= nil r))
+    (is (= nil d))))
