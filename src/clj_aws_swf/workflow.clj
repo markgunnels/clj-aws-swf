@@ -116,7 +116,6 @@
       (.setName name)
       (.setVersion version)
       (.setDescription description)
-      (.setDefaultTaskHeartbeatTimeout default-execution-timeout)
       (.setDefaultExecutionStartToCloseTimeout default-execution-timeout)
       (.setDefaultTaskStartToCloseTimeout default-task-timeout)
       (.setDefaultTaskList (common/create-task-list task-list-name))
