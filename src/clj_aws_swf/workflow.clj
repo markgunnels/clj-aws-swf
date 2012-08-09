@@ -116,9 +116,11 @@
       (.setName name)
       (.setVersion version)
       (.setDescription description)
+      (.setDefaultTaskHeartbeatTimeout default-execution-timeout)
       (.setDefaultExecutionStartToCloseTimeout default-execution-timeout)
       (.setDefaultTaskStartToCloseTimeout default-task-timeout)
-      (.setDefaultTaskList (common/create-task-list task-list-name)))))
+      (.setDefaultTaskList (common/create-task-list task-list-name))
+      (.setDefaultChildPolicy "TERMINATE"))))
 
 (defn register
   [domain name version description default-execution-timeout

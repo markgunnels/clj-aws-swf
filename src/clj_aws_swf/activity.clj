@@ -68,6 +68,7 @@
       (.setName name)
       (.setVersion version)
       (.setDescription description)
+      (.setDefaultTaskHeartbeatTimeout default-execution-timeout)
       (.setDefaultTaskScheduleToStartTimeout default-task-schedule-start)
       (.setDefaultTaskScheduleToCloseTimeout default-task-schedule-end)
       (.setDefaultTaskStartToCloseTimeout default-task-start-to-end)
