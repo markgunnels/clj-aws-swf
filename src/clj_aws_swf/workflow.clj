@@ -15,7 +15,11 @@
             CountOpenWorkflowExecutionsRequest
             ExecutionTimeFilter
             ChildPolicy
-            TaskList]))
+            TaskList
+            DescribeWorkflowExecutionRequest
+            GetWorkflowExecutionHistoryRequest
+            ListOpenWorkflowExecutionsRequest
+            ListClosedWorkflowExecutionsRequest]))
 
 (defn- create-workflow-type
   [name version]
@@ -146,3 +150,62 @@
         request (create-deprecate-workflow-type-request
                  domain name version)]
     (.deprecateWorkflowType service request)))
+
+(defprotocol Execute
+  (execute [this client]))
+
+(extend ListOpenWorkflowExecutionsRequest
+  Execute
+  {:execute (fn [this client]
+              (.listOpenWorkflowExecutions client this))})
+
+(extend ListClosedWorkflowExecutionsRequest
+  Execute
+  {:execute (fn [this client]
+              (.listClosedWorkflowExecutions client this))})
+
+(defn list-workflow-executions
+  [domain workflow-id request]
+  (let [wf-filter (WorkflowExecutionFilter.)
+        t-filter (ExecutionTimeFilter.)]
+    (doto wf-filter
+      (.setWorkflowId workflow-id))
+    (doto t-filter
+      (.setOldestDate (twenty-years-ago)))
+    (doto request
+      (.setDomain domain)
+      (.setExecutionFilter wf-filter)
+      (.setStartTimeFilter t-filter))
+    (execute request (c/create))))
+
+(defn list-open-workflow-executions
+  [domain workflow-id]
+  (list-workflow-executions domain
+                            workflow-id
+                            (ListOpenWorkflowExecutionsRequest.)))
+
+(defn list-closed-workflow-executions
+  [domain workflow-id]
+  (list-workflow-executions domain
+                            workflow-id
+                            (ListClosedWorkflowExecutionsRequest.)))
+
+(defn run-id-for-workflow-execution-info
+  [wei]
+  (.getRunId (.getExecution wei)))
+
+(defn closed-run-ids-for-workflow-id
+  [domain workflow-id]
+  (let [weis (list-closed-workflow-executions domain workflow-id)
+        wes (.getExecutionInfos weis)]
+    (doall (map run-id-for-workflow-execution-info wes))))
+
+(defn input-for-workflow-execution
+  [domain workflow-id run-id]
+  (-> (get-workflow-execution-history domain
+                                      workflow-id
+                                      run-id)
+      .getEvents
+      first
+      .getWorkflowExecutionStartedEventAttributes
+      .getInput))
