@@ -1,7 +1,9 @@
 (ns clj-aws-swf.workflow
   (:use clj-aws-swf.utils)
   (:require [clj-aws-swf.client :as c]
-            [clj-aws-swf.common :as common])
+            [clj-aws-swf.common :as common]
+            [clj-time.coerce :as time.coerce]
+            [clj-time.core :as time.core])
   (:import [com.amazonaws.services.simpleworkflow.model
             StartWorkflowExecutionRequest
             WorkflowType
@@ -189,6 +191,31 @@
   (list-workflow-executions domain
                             workflow-id
                             (ListClosedWorkflowExecutionsRequest.)))
+
+(defn list-workflow-executions-from-start-time
+  [domain oldest-date-str request]
+  (let [wf-filter (WorkflowExecutionFilter.)
+        oldest-date (time.coerce/to-date
+                     (time.coerce/from-string oldest-date-str)) 
+        t-filter (ExecutionTimeFilter.)]
+    (doto t-filter
+      (.setOldestDate oldest-date))
+    (doto request
+      (.setDomain domain)
+      (.setStartTimeFilter t-filter))
+    (execute request (c/create))))
+
+(defn list-open-workflow-executions-from-start-time
+  [domain start-time]
+  (list-workflow-executions-from-start-time domain
+                                            start-time
+                                            (ListOpenWorkflowExecutionsRequest.)))
+
+(defn list-closed-workflow-executions-from-start-time
+  [domain start-time]
+  (list-workflow-executions-from-start-time domain
+                                            start-time
+                                            (ListClosedWorkflowExecutionsRequest.)))
 
 (defn run-id-for-workflow-execution-info
   [wei]
