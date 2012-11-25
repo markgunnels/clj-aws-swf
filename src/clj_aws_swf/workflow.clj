@@ -46,7 +46,7 @@
 
 (defn terminate-workflow-execution
   ([domain run-id workflow-id]
-     (terminate-workflow execution domain run-id workflow-id ""))
+     (terminate-workflow-execution domain run-id workflow-id ""))
   ([domain run-id workflow-id reason]
      (let [swf-service (c/create)
            terminate-workflow-request (TerminateWorkflowExecutionRequest.)]
