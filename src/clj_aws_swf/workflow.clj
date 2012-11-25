@@ -45,14 +45,17 @@
     (.startWorkflowExecution swf-service start-workflow-request)))
 
 (defn terminate-workflow-execution
-  [domain run-id workflow-id]
-  (let [swf-service (c/create)
-        terminate-workflow-request (TerminateWorkflowExecutionRequest.)]
-    (doto terminate-workflow-request
-      (.setDomain domain)
-      (.setRunId run-id)
-      (.setWorkflowId workflow-id))
-    (.terminateWorkflowExecution swf-service terminate-workflow-request)))
+  ([domain run-id workflow-id]
+     (terminate-workflow execution domain run-id workflow-id ""))
+  ([domain run-id workflow-id reason]
+     (let [swf-service (c/create)
+           terminate-workflow-request (TerminateWorkflowExecutionRequest.)]
+       (doto terminate-workflow-request
+         (.setDomain domain)
+         (.setRunId run-id)
+         (.setWorkflowId workflow-id)
+         (.setReason reason))
+       (.terminateWorkflowExecution swf-service terminate-workflow-request))))
 
 (defn get-workflow-execution-history
   [domain workflow-id run-id]
