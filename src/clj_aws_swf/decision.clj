@@ -119,7 +119,11 @@
 (defn start-child-workflow-execution
   [decision-task-token wf-name wf-version input domain workflow-id]
   (let [swf-service (c/create)
-        attrs (create-complete-workflow-execution-attributes result)
+        attrs (create-complete-workflow-execution-attributes wf-name
+                                                             wf-version
+                                                             input
+                                                             domain
+                                                             workflow-id)
         decision (Decision.)
         decision-task-completed (RespondDecisionTaskCompletedRequest.)]
     (doto decision
