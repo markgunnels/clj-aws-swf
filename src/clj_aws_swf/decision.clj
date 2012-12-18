@@ -105,24 +105,22 @@
     (.respondDecisionTaskCompleted swf-service decision-task-completed)))
 
 (defn create-start-child-workflow-execution-attributes
-  [wf-name wf-version input domain workflow-id]
+  [wf-name wf-version input workflow-id]
   (let [attrs (StartChildWorkflowExecutionDecisionAttributes.)
         workflow-type (common/create-workflow-type wf-name
                                                    wf-version)]
     (doto attrs
       (.setInput input)
       (.setWorkflowType workflow-type)
-      (.setDomain domain)
       (.setWorkflowId workflow-id))
     attrs))
 
 (defn start-child-workflow-execution
-  [decision-task-token wf-name wf-version input domain workflow-id]
+  [decision-task-token wf-name wf-version input workflow-id]
   (let [swf-service (c/create)
         attrs (create-start-child-workflow-execution-attributes wf-name
                                                                 wf-version
                                                                 input
-                                                                domain
                                                                 workflow-id)
         decision (Decision.)
         decision-task-completed (RespondDecisionTaskCompletedRequest.)]
