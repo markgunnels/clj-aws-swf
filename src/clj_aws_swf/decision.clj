@@ -9,7 +9,8 @@
             RespondDecisionTaskCompletedRequest
             ActivityType
             FailWorkflowExecutionDecisionAttributes
-            CompleteWorkflowExecutionDecisionAttributes]))
+            CompleteWorkflowExecutionDecisionAttributes
+            StartChildWorkflowExecutionDecisionAttributes]))
 
 (defn poll-for-decision-task
   [task-list-name domain identity]
@@ -98,6 +99,32 @@
     (doto decision
       (.setCompleteWorkflowExecutionDecisionAttributes attrs)
       (.setDecisionType "CompleteWorkflowExecution"))
+    (doto decision-task-completed
+      (.setTaskToken decision-task-token)
+      (.setDecisions [decision]))
+    (.respondDecisionTaskCompleted swf-service decision-task-completed)))
+
+(defn create-start-child-workflow-execution-attributes
+  [wf-name wf-version input domain workflow-id]
+  (let [attrs (StartChildWorkflowExecutionDecisionAttributes.)
+        workflow-type (create-workflow-type wf-name
+                                            wf-version)]
+    (doto attrs
+      (.setInput input)
+      (.setWorkflowType workflow-type)
+      (.setDomain domain)
+      (.setWorkflowId workflow-id))
+    attrs))
+
+(defn start-child-workflow-execution
+  [decision-task-token wf-name wf-version input domain workflow-id]
+  (let [swf-service (c/create)
+        attrs (create-complete-workflow-execution-attributes result)
+        decision (Decision.)
+        decision-task-completed (RespondDecisionTaskCompletedRequest.)]
+    (doto decision
+      (.setStartChildWorkflowExecutionDecisionAttributes attrs)
+      (.setDecisionType "StartChildWorkflowExecution"))
     (doto decision-task-completed
       (.setTaskToken decision-task-token)
       (.setDecisions [decision]))
