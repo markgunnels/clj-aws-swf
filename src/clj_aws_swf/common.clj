@@ -17,3 +17,11 @@
       (.setName name)
       (.setVersion version))
     activity-type))
+
+(defn create-workflow-type
+  [name version]
+  (let [workflow-type (WorkflowType.)]
+    (doto workflow-type
+      (.setName name)
+      (.setVersion version))
+    workflow-type))
