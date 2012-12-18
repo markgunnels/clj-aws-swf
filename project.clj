@@ -1,4 +1,4 @@
-(defproject clj-aws-swf/clj-aws-swf "1.0.21-SNAPSHOT"
+(defproject clj-aws-swf/clj-aws-swf "1.0.22-SNAPSHOT"
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [com.amazonaws/aws-java-sdk "1.3.21.1"]

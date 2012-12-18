@@ -2,7 +2,8 @@
   (:require [clj-aws-swf.client :as c])
   (:import [com.amazonaws.services.simpleworkflow.model
             TaskList
-            ActivityType]))
+            ActivityType
+            WorkflowType]))
 
 (defn create-task-list
   [name]
