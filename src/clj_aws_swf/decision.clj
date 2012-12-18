@@ -107,8 +107,8 @@
 (defn create-start-child-workflow-execution-attributes
   [wf-name wf-version input domain workflow-id]
   (let [attrs (StartChildWorkflowExecutionDecisionAttributes.)
-        workflow-type (create-workflow-type wf-name
-                                            wf-version)]
+        workflow-type (common/create-workflow-type wf-name
+                                                   wf-version)]
     (doto attrs
       (.setInput input)
       (.setWorkflowType workflow-type)
