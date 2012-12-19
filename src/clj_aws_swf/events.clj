@@ -1,6 +1,7 @@
 (ns clj-aws-swf.events
   (:require [clj-aws-swf.client :as c]
-            [clj-aws-swf.common :as common])
+            [clj-aws-swf.common :as common]
+            [inflections.core :as inflections])
   (:import [com.amazonaws.services.simpleworkflow.model
             TaskList
             PollForDecisionTaskRequest
@@ -8,8 +9,11 @@
             Decision
             RespondDecisionTaskCompletedRequest
             ActivityType
+            ActivityTask
             FailWorkflowExecutionDecisionAttributes
             CompleteWorkflowExecutionDecisionAttributes]))
+
+(def initiated-event-set #{"ActivityTaskScheduled" "StartChildWorkflowExecutionInitiated"})
 
 (defn event-type
   [event]
@@ -191,17 +195,38 @@
 
 (defn scheduled-event-id
   [event]
-  (.getScheduledEventId (attributes event)))
+  (let [attrs (bean (attributes event))]
+    (if (contains? attrs :scheduledEventId)
+      (:scheduledEventId attrs)
+      (:initiatedEventId attrs ))))
 
 (defn has-scheduled-event-id?
   [event event-id]
   (let [attrs (bean (attributes event))]
-    (and (contains? attrs :scheduledEventId)
-         (= (:scheduledEventId attrs) event-id))))
+    (or (and (contains? attrs :scheduledEventId)
+             (= (:scheduledEventId attrs) event-id))
+        (and (contains? attrs :initiatedEventId)
+             (= (:initiatedEventId attrs) event-id))
+        )))
+
+
+(defn initiated-event?
+  [event]
+  (contains? initiated-event-set (event-type event)))
+
+(defn initiated-events
+  [events]
+  (filter initiated-event? events))
+
+(defn outcome-for-an-event
+  [events event-id]
+  (last (filter #(and (has-scheduled-event-id? % event-id)
+                       (not (initiated-event? %)))
+                 events)))
 
 (defn outcome-for-an-activity
   [events event-id]
-  (first (filter #(and (has-scheduled-event-id? % event-id)
+  (last (filter #(and (has-scheduled-event-id? % event-id)
                        (not= "ActivityTaskStarted" (.getEventType %)))
                  events)))
 
@@ -283,6 +308,13 @@
         attrs (attributes outcome)]
     {:details (.getDetails attrs)}))
 
+(defmethod activity-outcome-details "ChildWorkflowExecutionCompleted"
+  [events activity-event]
+  (let [outcome (outcome-for-an-event events
+                                      (scheduled-event-id activity-event))
+        attrs (attributes outcome)]
+    {:result (.getResult attrs)}))
+
 (defn activity-event-details
   [events activity-event]
   {:id (.getEventId activity-event)
@@ -305,3 +337,48 @@
   [events]
   (for [activity-event (activity-task-scheduled-events events)]
     (activity-outcome events activity-event)))
+
+
+(defn event-status
+  [events activity-event]
+  (-> (.getEventType
+       (outcome-for-an-event events
+                             (.getEventId activity-event)))
+      inflections/hyphenize
+      keyword))
+
+(defmulti activity-type event-type)
+
+(defmethod activity-type "StartChildWorkflowExecutionInitiated"
+  [event]
+  (-> event
+      attributes
+      .getWorkflowType
+      .getName))
+
+(defmethod activity-type :default
+  [event]
+  (.getName (.getActivityType attributes )))
+
+(defn event-details
+  [events activity-event]
+  {:id (.getEventId activity-event)
+   :input (input-from-activity-event activity-event)
+   :status (event-status events activity-event)
+   :activity-type (activity-type activity-event)})
+
+(defn event-outcome
+  [events initiated-event]
+  (let [outcome (outcome-for-an-event
+                 events
+                 (.getEventId initiated-event))
+        event-details (event-details events
+                                     initiated-event)
+        outcome-details (activity-outcome-details events
+                                                  outcome)]
+    (conj event-details outcome-details)))
+
+(defn event-outcomes
+  [events]
+  (for [activity-event (initiated-events events)]
+    (event-outcome events activity-event)))
