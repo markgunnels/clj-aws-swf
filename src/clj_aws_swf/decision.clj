@@ -131,3 +131,12 @@
       (.setTaskToken decision-task-token)
       (.setDecisions [decision]))
     (.respondDecisionTaskCompleted swf-service decision-task-completed)))
+
+(defn no-decision
+  [decision-task-token ]
+  (let [swf-service (c/create)
+        decision-task-completed (RespondDecisionTaskCompletedRequest.)]
+    (doto decision-task-completed
+      (.setTaskToken decision-task-token)
+      (.setDecisions []))
+    (.respondDecisionTaskCompleted swf-service decision-task-completed)))
