@@ -315,6 +315,10 @@
         attrs (attributes outcome)]
     {:result (.getResult attrs)}))
 
+(defmethod activity-outcome-details "ChildWorkflowExecutionStarted"
+  [events activity-event]
+  {})
+
 (defn activity-event-details
   [events activity-event]
   {:id (.getEventId activity-event)
