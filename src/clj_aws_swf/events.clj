@@ -362,7 +362,7 @@
 
 (defmethod activity-type :default
   [event]
-  (.getName (.getActivityType attributes )))
+  (.getName (.getActivityType (attributes event))))
 
 (defn event-details
   [events activity-event]
