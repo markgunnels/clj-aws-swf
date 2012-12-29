@@ -1,4 +1,6 @@
-(ns com.221blabs.aws.swf.decision
+(ns {:description "Wraps the AWS SWF decision calls."
+     :author "Mark Gunnels"}
+    com.221blabs.aws.swf.decision
   (:require [com.221blabs.aws.swf.common :as common])
   (:import [com.amazonaws.services.simpleworkflow.model
             TaskList
@@ -20,29 +22,36 @@
     (.setIdentity identity)))
 
 ;;DECISION
+;;create decision
+(defn- create-schedule-activity-task-attributes
+  [name version id task-list-name input]
+  (doto (ScheduleActivityTaskDecisionAttributes.)
+    (.setActivityId id)
+    (.setActivityType (common/create-activity-type name
+                                                   version))
+    (.setTaskList (common/create-task-list task-list-name))
+    (.setInput input)))
+
+(defn create-schedule-activity-task-decision
+  [name version id task-list-name input]
+  (doto (Decision.) 
+    (.setScheduleActivityTaskDecisionAttributes
+     (create-schedule-activity-task-attributes name version
+                                               id task-list-name
+                                               input))
+    (.setDecisionType "ScheduleActivityTask")))
+
 (defprotocol Decision
   (as-attributes [this])
   (as-decision [this]))
 
-(defrecord ScheduleActivityTask [name
-                                 version
-                                 id
-                                 type
-                                 task-list
-                                 input]
+(defrecord ScheduleActivityTask []
   Decision
   (as-attributes [r]
-    (let [activity-type (common/create-activity-type (:name r)
-                                                     (:version r))]
-      (doto (ScheduleActivityTaskDecisionAttributes.)
-        (.setActivityId (:id r))
-        (.setActivityType (:type r))
-        (.setTaskList (:task-list r))
-        (.setInput (:input r)))))
+    (let [activity-type ]
+))
   (as-decision [r]
-    (doto (Decision.) 
-      (.setScheduleActivityTaskDecisionAttributes (as-attributes r))
-      (.setDecisionType "ScheduleActivityTask"))))
+))
 
 (defrecord FailWorkflowExecution [reason
                                   details]
@@ -52,9 +61,7 @@
       (.setReason (:reason r))
       (.setDetails (:details r))))
   (as-decision [r]
-    (doto (Decision.) 
-      (.setFailWorkflowExecutionDecisionAttributes (as-attributes r))
-      (.setDecisionType "FailWorkflowExecution"))))
+))
 
 (defrecord CompleteWorkflowExecution [result]
   (as-attributes [r]
