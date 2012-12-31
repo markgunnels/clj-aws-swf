@@ -1,12 +1,12 @@
-(ns {:description "Wraps the AWS SWF decision calls."
-     :author "Mark Gunnels"}
-    com.221blabs.aws.swf.decision
-  (:require [com.221blabs.aws.swf.common :as common])
+(ns com.221blabs.aws.swf.decision
+  (:require [com.221blabs.aws.swf.common :as common]
+            [com.221blabs.aws.swf.constraints :as cx])
   (:import [com.amazonaws.services.simpleworkflow.model
             TaskList
             PollForDecisionTaskRequest
             ScheduleActivityTaskDecisionAttributes
             Decision
+            DecisionTask
             RespondDecisionTaskCompletedRequest
             ActivityType
             FailWorkflowExecutionDecisionAttributes
@@ -14,12 +14,31 @@
             StartChildWorkflowExecutionDecisionAttributes]))
 
 ;;POLLER
-(defn create-poll
-  [domain task-list identity]
-  (doto (PollForDecisionTaskRequest.)
-    (.setTaskList task-list)
-    (.setDomain domain)
-    (.setIdentity identity)))
+(defn- create-poll-for-decision-task-request
+  [domain task-list-name identity maximum-page-size next-page-token]
+  (let [req (PollForDecisionTaskRequest.)]
+    (if maximum-page-size (.setMaximumPageSize req (Integer. maximum-page-size)))
+    (doto req 
+      (.setTaskList (common/create-task-list task-list-name))
+      (.setDomain domain)
+      (.setIdentity identity)
+      (.setNextPageToken next-page-token))))
+
+(defn poll
+  [client domain task-list-name identity maximum-page-size next-page-token]
+  {:pre [(cx/swf-client? client)
+         (every? #(or (string? %)
+                      (nil? %))
+                 [domain task-list-name identity next-page-token])
+         (or (number? maximum-page-size)
+             (nil? maximum-page-size))]
+   :post [(instance? DecisionTask %)]}
+  (.pollForDecisionTask client
+                        (create-poll-for-decision-task-request domain
+                                                               task-list-name
+                                                               identity
+                                                               maximum-page-size
+                                                               next-page-token)))
 
 ;;DECISION
 ;;create decision
@@ -34,6 +53,8 @@
 
 (defn create-schedule-activity-task-decision
   [name version id task-list-name input]
+  {:pre [(every? string? [name version id task-list-name input])]
+   :post [(instance? Decision %)]}
   (doto (Decision.) 
     (.setScheduleActivityTaskDecisionAttributes
      (create-schedule-activity-task-attributes name version
@@ -41,56 +62,60 @@
                                                input))
     (.setDecisionType "ScheduleActivityTask")))
 
-(defprotocol Decision
-  (as-attributes [this])
-  (as-decision [this]))
+(defn- create-fail-workflow-execution-decision-attributes
+  [reason details]
+  (doto (FailWorkflowExecutionDecisionAttributes.)
+    (.setReason reason)
+    (.setDetails details)))
 
-(defrecord ScheduleActivityTask []
-  Decision
-  (as-attributes [r]
-    (let [activity-type ]
-))
-  (as-decision [r]
-))
+(defn create-fail-workflow-execution-decision
+  [reason details]
+  {:pre [(every? #(or (string? %) (nil? %)) [reason details])]
+   :post [(instance? Decision %)]}
+  (doto (Decision.) 
+    (.setFailWorkflowExecutionDecisionAttributes
+     (create-fail-workflow-execution-decision-attributes reason details))
+    (.setDecisionType "FailWorkflowExecution")))
 
-(defrecord FailWorkflowExecution [reason
-                                  details]
-  Decision
-  (as-attributes [r]
-    (doto (FailWorkflowExecutionDecisionAttributes.)
-      (.setReason (:reason r))
-      (.setDetails (:details r))))
-  (as-decision [r]
-))
+(defn- create-complete-workflow-execution-decision-attributes
+  [result]
+  (doto (CompleteWorkflowExecutionDecisionAttributes.)
+    (.setResult result)))
 
-(defrecord CompleteWorkflowExecution [result]
-  (as-attributes [r]
-    (doto (CompleteWorkflowExecutionDecisionAttributes.)
-      (.setResult (:result r))))
-  (as-decision [r]
-    (doto (Decision.) 
-      (.setCompleteWorkflowExecutionDecisionAttributes (as-attributes r))
-      (.setDecisionType "CompleteWorkflowExecution"))))
+(defn create-complete-workflow-execution-decision
+  [result]
+  {:pre [(every? #(or (string? %) (nil? %)) [result])]
+   :post [(instance? Decision %)]}
+  (doto (Decision.) 
+    (.setCompleteWorkflowExecutionDecisionAttributes
+     (create-complete-workflow-execution-decision-attributes result))
+    (.setDecisionType "CompleteWorkflowExecution")))
 
-(defrecord StartChildWorkflowExecution [name
-                                        version
-                                        workflow-id
-                                        input]
-  (as-attributes [r]
-    (let [workflow-type (common/create-workflow-type wf-name
-                                                     wf-version)]
-      (doto (StartChildWorkflowExecutionDecisionAttributes.)
-        (.setInput input)
-        (.setWorkflowType workflow-type)
-        (.setWorkflowId workflow-id))))
-  (as-decision [r]
-    (doto (Decision.) 
-      (.setStartChildWorkflowExecutionDecisionAttributes (as-attributes r))
-      (.setDecisionType "StartChildWorkflowExecution"))))
+(defn- start-child-workflow-execution-decision-attributes
+  [name version id input]
+  (doto (StartChildWorkflowExecutionDecisionAttributes.)
+    (.setInput input)
+    (.setWorkflowType (common/create-workflow-type name
+                                                   version))
+    (.setWorkflowId id)))
+
+(defn start-child-workflow-execution-decision
+  [name version id input]
+  {:pre [(every? string? [name version id input])]
+   :post [(instance? Decision %)]}
+  (doto (Decision.) 
+    (.setStartChildWorkflowExecutionDecisionAttributes
+     (start-child-workflow-execution-decision-attributes name version
+                                                         id input))
+    (.setDecisionType "StartChildWorkflowExecution")))
 
 
 (defn decision-task-completed
-  [task-token & decisions]
-  (doto (RespondDecisionTaskCompletedRequest.)
-    (.setTaskToken task-token)
-    (.setDecisions decisions)))
+  [client task-token & decisions]
+  {:pre [(cx/swf-client? client)
+         (string? task-token)]
+   :post [(nil? %)]}
+  (.respondDecisionTaskCompleted client
+                                 (doto (RespondDecisionTaskCompletedRequest.)
+                                   (.setTaskToken task-token)
+                                   (.setDecisions decisions))))

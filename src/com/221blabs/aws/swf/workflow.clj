@@ -1,5 +1,4 @@
-(ns {:description "Wraps the AWS SWF Workflow calls."
-     :author "Mark Gunnels"}
+(ns 
   com.221blabs.aws.swf.workflow
   (:use clj-aws-swf.utils)
   (:require [clj-aws-swf.client :as c]
@@ -86,7 +85,7 @@
 (defn input-for-workflow-execution
   [client domain wf-id run-id]
   (-> (get-execution-history domain
-                             workflow-id
+                             wf-id
                              run-id)
       .getEvents
       first
