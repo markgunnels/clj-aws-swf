@@ -1,4 +1,4 @@
-(ns clj-aws-swf.events
+(ns com.221blabs.aws.swf.events
   (:require [clj-aws-swf.client :as c]
             [clj-aws-swf.common :as common]
             [inflections.core :as inflections])
@@ -13,401 +13,134 @@
             FailWorkflowExecutionDecisionAttributes
             CompleteWorkflowExecutionDecisionAttributes]))
 
-;; becomes alpha event set
+;; alpha event set
 (def alpha-event-type-set #{"ActivityTaskScheduled" "StartChildWorkflowExecutionInitiated"})
 
 ;; omega event set
 (def omega-event-type-set #{"ActivityTaskCanceled" "ActivityTaskCompleted" "ActivityTaskFailed"
-                       "ActivityTaskTimedOut" "ActivityTaskCompleted"
-                       "ChildWorkflowExecutionCompleted" "ChildWorkflowExecutionFailed"
-                       "ChildWorkflowExecutionTimedOut" "ChildWorkflowExecutionCanceled"
-                       "ChildWorkflowExecutionTerminated"})
-
-(defn alpha-event?
-  [event-type]
-  (contains? alpha-event-type-set event-type))
-
-(defn omega-event?
-  [event-type]
-  (contains? omega-event-type-set event-type))
-
-(defn activity-set
-  [activities ]
-  )
-
-(defn activity-series
-  [activities]
-  
-  )
+                            "ActivityTaskTimedOut"
+                            "ChildWorkflowExecutionCompleted" "ChildWorkflowExecutionFailed"
+                            "ChildWorkflowExecutionTimedOut" "ChildWorkflowExecutionCanceled"
+                            "ChildWorkflowExecutionTerminated"})
 
 (defn event-type
   [event]
   (.getEventType event))
 
+(defn alpha-event?
+  [event]
+  (contains? alpha-event-type-set (event-type event)))
+
+(defn omega-event?
+  [event]
+  (contains? omega-event-type-set (event-type event)))
+
+
 (defmulti attributes event-type)
-
-(defmethod attributes "WorkflowExecutionStarted"
-  [event]
-  (.getWorkflowExecutionStartedEventAttributes event))
-
-(defmethod attributes "WorkflowExecutionCompleted"
-  [event]
-  (.getWorkflowExecutionCompletedEventAttributes event))
-
-(defmethod attributes "WorkflowExecutionFailed"
-  [event]
-  (.getWorkflowExecutionFailedEventAttributes event))
-
-(defmethod attributes "WorkflowExecutionTimedOut"
-  [event]
-  (.getWorkflowExecutionTimedOutEventAttributes event))
-
-(defmethod attributes "WorkflowExecutionCanceled"
-  [event]
-  (.getWorkflowExecutionCanceledEventAttributes event))
-
-(defmethod attributes "WorkflowExecutionTerminated"
-  [event]
-  (.getWorkflowExecutionTerminatedEventAttributes event))
-
-(defmethod attributes "WorkflowExecutionContinuedAsNew"
-  [event]
-  (.getWorkflowExecutionContinuedAsNewEventAttributes event))
-
-(defmethod attributes "WorkflowExecutionCancelRequested"
-  [event]
-  (.getWorkflowExecutionCancelRequestedEventAttributes event))
-
-(defmethod attributes "DecisionTaskScheduled"
-  [event]
-  (.getDecisionTaskScheduledEventAttributes event))
-
-(defmethod attributes "DecisionTaskStarted"
-  [event]
-  (.getDecisionTaskStartedEventAttributes event))
-
-(defmethod attributes "DecisionTaskCompleted"
-  [event]
-  (.getDecisionTaskCompletedEventAttributes event))
-
-(defmethod attributes "DecisionTaskTimedOut"
-  [event]
-  (.getDecisionTaskTimedOutEventAttributes event))
 
 (defmethod attributes "ActivityTaskScheduled"
   [event]
-  (.getActivityTaskScheduledEventAttributes event))
-
-(defmethod attributes "ScheduleActivityTaskFailed"
-  [event]
-  (.getScheduleActivityTaskFailedEventAttributes event))
-
-(defmethod attributes "ActivityTaskStarted"
-  [event]
-  (.getActivityTaskStartedEventAttributes event))
+  (let [a (.getActivityTaskScheduledEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getEventId event)
+     :type (.getName (.getActivityType a))}))
 
 (defmethod attributes "ActivityTaskCompleted"
   [event]
-  (.getActivityTaskCompletedEventAttributes event))
+  (let [a (.getActivityTaskCompletedEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getScheduledEventId a)
+     :result (.getResult a)
+     :status :completed}))
 
 (defmethod attributes "ActivityTaskFailed"
   [event]
-  (.getActivityTaskFailedEventAttributes event))
+  (let [a (.getActivityTaskFailedEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getScheduledEventId a)
+     :details (.getDetails a)
+     :reason (.getReason a)
+     :status :failed}))
 
 (defmethod attributes "ActivityTaskTimedOut"
   [event]
-  (.getActivityTaskTimedOutEventAttributes event))
+  (let [a (.getActivityTaskTimedOutEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getScheduledEventId a)
+     :timeout-type (.getTimeoutType a)
+     :status :timed-out}))
 
 (defmethod attributes "ActivityTaskCanceled"
   [event]
-  (.getActivityTaskCanceledEventAttributes event))
-
-(defmethod attributes "ActivityTaskCancelRequested"
-  [event]
-  (.getActivityTaskCancelRequestedEventAttributes event))
-
-(defmethod attributes "RequestCancelActivityTaskFailed"
-  [event]
-  (.getRequestCancelActivityTaskFailedEventAttributes event))
-
-(defmethod attributes "WorkflowExecutionSignaled"
-  [event]
-  (.getWorkflowExecutionSignaledEventAttributes event))
-
-(defmethod attributes "MarkerRecorded"
-  [event]
-  (.getMarkerRecordedEventAttributes event))
-
-(defmethod attributes "TimerStarted"
-  [event]
-  (.getTimerStartedEventAttributes event))
-
-(defmethod attributes "StartTimerFailed"
-  [event]
-  (.getStartTimerFailedEventAttributes event))
-
-(defmethod attributes "TimerFired"
-  [event]
-  (.getTimerFiredEventAttributes event))
-
-(defmethod attributes "TimerCanceled"
-  [event]
-  (.getTimerCanceledEventAttributes event))
-
-(defmethod attributes "CancelTimerFailed"
-  [event]
-  (.getCancelTimerFailedEventAttributes event))
+  (let [a (.getActivityTaskCanceledEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getScheduledEventId a)
+     :details (.getDetails a)
+     :status :canceled}))
 
 (defmethod attributes "StartChildWorkflowExecutionInitiated"
   [event]
-  (.getStartChildWorkflowExecutionInitiatedEventAttributes event))
-
-(defmethod attributes "StartChildWorkflowExecutionFailed"
-  [event]
-  (.getStartChildWorkflowExecutionFailedEventAttributes event))
-
-(defmethod attributes "ChildWorkflowExecutionStarted"
-  [event]
-  (.getChildWorkflowExecutionStartedEventAttributes event))
+  (let [a (.getStartChildWorkflowExecutionInitiatedEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getEventId event)
+     :type (.getName (.getWorkflowType a))}))
 
 (defmethod attributes "ChildWorkflowExecutionCompleted"
   [event]
-  (.getChildWorkflowExecutionCompletedEventAttributes event))
+  (let [a (.getChildWorkflowExecutionCompletedEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getInitiatedEvent a)
+     :result (.getResult a)
+     :status :completed}))
 
 (defmethod attributes "ChildWorkflowExecutionFailed"
   [event]
-  (.getChildWorkflowExecutionFailedEventAttributes event))
+  (let [a (.getChildWorkflowExecutionFailedEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getInitiatedEvent a)
+     :reason (.getReason a)
+     :details (.getDetails a)
+     :status :failed}))
 
 (defmethod attributes "ChildWorkflowExecutionTimedOut"
   [event]
-  (.getChildWorkflowExecutionTimedOutEventAttributes event))
+  (let [a (.getChildWorkflowExecutionTimedOutEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getInitiatedEvent a)
+     :timeout-type (.getTimeoutType a)
+     :status :timed-out}))
 
 (defmethod attributes "ChildWorkflowExecutionCanceled"
   [event]
-  (.getChildWorkflowExecutionCanceledEventAttributes event))
+  (let [a (.getChildWorkflowExecutionCanceledEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getInitiatedEvent a)
+     :details (.getDetails a)
+     :status :canceled}))
 
 (defmethod attributes "ChildWorkflowExecutionTerminated"
   [event]
-  (.getChildWorkflowExecutionTerminatedEventAttributes event))
+  (let [a (.getChildWorkflowExecutionTerminatedEventAttributes event)]
+    {:id (.getEventId event)
+     :origin-id (.getInitiatedEvent a)
+     :status :terminated}))
 
-(defmethod attributes "SignalExternalWorkflowExecutionInitiated"
-  [event]
-  (.getSignalExternalWorkflowExecutionInitiatedEventAttributes event))
+(defn extract-omega-event
+  [events alpha-event]
+  (attributes (first (filter #(and (omega-event? %)
+                                   (= (:id (attributes alpha-event))
+                                      (:origin-id (attributes %))))
+                             events))))
 
-(defmethod attributes "ExternalWorkflowExecutionSignaled"
-  [event]
-  (.getExternalWorkflowExecutionSignaledEventAttributes event))
-
-(defmethod attributes "SignalExternalWorkflowExecutionFailed"
-  [event]
-  (.getSignalExternalWorkflowExecutionFailedEventAttributes event))
-
-(defmethod attributes "RequestCancelExternalWorkflowExecutionInitiated"
-  [event]
-  (.getRequestCancelExternalWorkflowExecutionInitiatedEventAttributes event))
-
-(defmethod attributes "ExternalWorkflowExecutionCancelRequested"
-  [event]
-  (.getExternalWorkflowExecutionCancelRequestedEventAttributes event))
-
-(defmethod attributes "RequestCancelExternalWorkflowExecutionFailed"
-  [event]
-  (.getRequestCancelExternalWorkflowExecutionFailedEventAttributes event))
-
-(defn activity-task-scheduled-events
+(defn extract-alpha-events
   [events]
-  (filter #(= "ActivityTaskScheduled" (event-type %)) events))
+  (filter alpha-event? events))
 
-(defn scheduled-event-id
-  [event]
-  (let [attrs (bean (attributes event))]
-    (if (contains? attrs :scheduledEventId)
-      (:scheduledEventId attrs)
-      (:initiatedEventId attrs ))))
+(defn characterize-event
+  [events alpha-event]
+  (merge (attributes alpha-event)
+         (extract-omega-event events alpha-event)))
 
-(defn has-scheduled-event-id?
-  [event event-id]
-  (let [attrs (bean (attributes event))]
-    (or (and (contains? attrs :scheduledEventId)
-             (= (:scheduledEventId attrs) event-id))
-        (and (contains? attrs :initiatedEventId)
-             (= (:initiatedEventId attrs) event-id))
-        )))
-
-
-(defn initiated-event?
-  [event]
-  (contains? initiated-event-set (event-type event)))
-
-(defn initiated-events
+(defn activity-series
   [events]
-  (filter initiated-event? events))
-
-(defn outcome-for-an-event
-  [events event-id]
-  (last (filter #(and (has-scheduled-event-id? % event-id)
-                       (not (initiated-event? %)))
-                 events)))
-
-(defn outcome-for-an-activity
-  [events event-id]
-  (last (filter #(and (has-scheduled-event-id? % event-id)
-                       (not= "ActivityTaskStarted" (.getEventType %)))
-                 events)))
-
-(defn input-from-activity-event
-  [activity-event]
-  (.getInput (attributes activity-event)))
-
-(defmulti status-of-activity
-  (fn [events activity-event]
-    (.getEventType
-     (outcome-for-an-activity events
-                              (.getEventId activity-event)))))
-
-(defmethod status-of-activity "ActivityTaskCompleted"
-  [events activity-event]
-  :completed)
-
-(defmethod status-of-activity "ActivityTaskFailed"
-  [events activity-event]
-  :failed)
-
-(defmethod status-of-activity "ActivityTaskTimedOut"
-  [events activity-event]
-  :timed-out)
-
-(defmethod status-of-activity "ActivityTaskCanceled"
-  [events activity-event]
-  :canceled)
-
-(defmethod status-of-activity "ActivityTaskCancelRequested"
-  [events activity-event]
-  :cancel-requested)
-
-(defmulti activity-outcome-details
-  (fn [events activity-event]
-    (.getEventType
-     (outcome-for-an-activity
-      events
-      (scheduled-event-id activity-event)))))
-
-(defmethod activity-outcome-details "ActivityTaskCompleted"
-  [events activity-event]
-  (let [outcome (outcome-for-an-activity
-                 events
-                 (scheduled-event-id activity-event))
-        attrs (attributes outcome)]
-    {:result (.getResult attrs)}))
-
-(defmethod activity-outcome-details "ActivityTaskFailed"
-  [events activity-event]
-  (let [outcome (outcome-for-an-activity
-                 events
-                 (scheduled-event-id activity-event))
-        attrs (attributes outcome)]
-    {:reason (.getReason attrs)
-     :details (.getDetails attrs)}))
-
-(defmethod activity-outcome-details "ActivityTaskTimedOut"
-  [events activity-event]
-  (let [outcome (outcome-for-an-activity
-                 events
-                 (scheduled-event-id activity-event))
-        attrs (attributes outcome)]
-    {:details (.getDetails attrs)}))
-
-(defmethod activity-outcome-details "ActivityTaskCanceled"
-  [events activity-event]
-  (let [outcome (outcome-for-an-activity
-                 events
-                 (scheduled-event-id activity-event))
-        attrs (attributes outcome)]
-    {:details (.getDetails attrs)}))
-
-(defmethod activity-outcome-details "ActivityTaskCancelRequested"
-  [events activity-event]
-  (let [outcome (outcome-for-an-activity
-                 events
-                 (scheduled-event-id activity-event))
-        attrs (attributes outcome)]
-    {:details (.getDetails attrs)}))
-
-(defmethod activity-outcome-details "ChildWorkflowExecutionCompleted"
-  [events activity-event]
-  (let [outcome (outcome-for-an-event events
-                                      (scheduled-event-id activity-event))
-        attrs (attributes outcome)]
-    {:result (.getResult attrs)}))
-
-(defmethod activity-outcome-details "ChildWorkflowExecutionStarted"
-  [events activity-event]
-  {})
-
-(defn activity-event-details
-  [events activity-event]
-  {:id (.getEventId activity-event)
-   :input (input-from-activity-event activity-event)
-   :status (status-of-activity events activity-event)
-   :activity-type (.getName (.getActivityType (attributes activity-event)))})
-
-(defn activity-outcome
-  [events activity-event]
-  (let [outcome (outcome-for-an-activity
-                 events
-                 (.getEventId activity-event))
-        activity-details (activity-event-details events
-                                                 activity-event)
-        outcome-details (activity-outcome-details events
-                                                  outcome)]
-    (conj activity-details outcome-details)))
-
-(defn activity-outcomes
-  [events]
-  (for [activity-event (activity-task-scheduled-events events)]
-    (activity-outcome events activity-event)))
-
-
-(defn event-status
-  [events activity-event]
-  (-> (.getEventType
-       (outcome-for-an-event events
-                             (.getEventId activity-event)))
-      inflections/hyphenize
-      keyword))
-
-(defmulti activity-type event-type)
-
-(defmethod activity-type "StartChildWorkflowExecutionInitiated"
-  [event]
-  (-> event
-      attributes
-      .getWorkflowType
-      .getName))
-
-(defmethod activity-type :default
-  [event]
-  (.getName (.getActivityType (attributes event))))
-
-(defn event-details
-  [events activity-event]
-  {:id (.getEventId activity-event)
-   :input (input-from-activity-event activity-event)
-   :status (event-status events activity-event)
-   :activity-type (activity-type activity-event)})
-
-(defn event-outcome
-  [events initiated-event]
-  (let [outcome (outcome-for-an-event
-                 events
-                 (.getEventId initiated-event))
-        event-details (event-details events
-                                     initiated-event)
-        outcome-details (activity-outcome-details events
-                                                  outcome)]
-    (conj event-details outcome-details)))
-
-(defn event-outcomes
-  [events]
-  (for [activity-event (initiated-events events)]
-    (event-outcome events activity-event)))
+  (sort-by :origin-id (map #(characterize-event events %) (extract-alpha-events events))))

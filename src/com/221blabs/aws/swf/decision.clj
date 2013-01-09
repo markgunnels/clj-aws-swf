@@ -109,7 +109,6 @@
                                                          id input))
     (.setDecisionType "StartChildWorkflowExecution")))
 
-
 (defn decision-task-completed
   [client task-token & decisions]
   {:pre [(cx/swf-client? client)
