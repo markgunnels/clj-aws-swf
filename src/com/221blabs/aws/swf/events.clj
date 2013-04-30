@@ -43,6 +43,7 @@
   (let [a (.getActivityTaskScheduledEventAttributes event)]
     {:id (.getEventId event)
      :origin-id (.getEventId event)
+     :input (.getInput event)
      :type (.getName (.getActivityType a))}))
 
 (defmethod attributes "ActivityTaskCompleted"
@@ -144,3 +145,10 @@
 (defn activity-series
   [events]
   (sort-by :origin-id (map #(characterize-event events %) (extract-alpha-events events))))
+
+(defn initial-input-for-workflow-execution
+  [events]
+  (-> events
+      first
+      .getWorkflowExecutionStartedEventAttributes
+      .getInput))
