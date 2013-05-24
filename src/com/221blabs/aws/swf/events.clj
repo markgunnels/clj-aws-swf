@@ -43,7 +43,7 @@
   (let [a (.getActivityTaskScheduledEventAttributes event)]
     {:id (.getEventId event)
      :origin-id (.getEventId event)
-     :input (.getInput event)
+     :input (.getInput a)
      :type (.getName (.getActivityType a))}))
 
 (defmethod attributes "ActivityTaskCompleted"
