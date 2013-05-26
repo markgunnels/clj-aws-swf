@@ -126,3 +126,10 @@
     (decision-task-completed client
                              (.getTaskToken decision-task)
                              fail-decision)))
+
+(defn complete-workflow-execution
+  [client decision-task result]
+  (let [complete-decision (create-complete-workflow-execution-decision result)]
+    (decision-task-completed client
+                             (.getTaskToken decision-task)
+                             complete-decision)))
