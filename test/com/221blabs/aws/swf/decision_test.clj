@@ -52,3 +52,15 @@
     (wf/terminate ct/test-client ct/domain id (.getRunId r))
     (is (nil? result))))
 
+(deftest test-fail-workflow-execution
+  (let [id (str (java.util.UUID/randomUUID))
+        tid (str (java.util.UUID/randomUUID))
+        r (wf/start ct/test-client ct/domain "add-and-multiply"
+                    ct/version id (str [1 1 2 2]))
+        t (poll ct/test-client ct/domain "add-and-multiply"
+                "Me" nil nil)
+        result (fail-workflow-execution ct/test-client
+                                        t
+                                        "cuz")]
+    (is (nil? result))))
+

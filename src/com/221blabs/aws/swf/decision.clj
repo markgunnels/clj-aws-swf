@@ -118,3 +118,11 @@
                                  (doto (RespondDecisionTaskCompletedRequest.)
                                    (.setTaskToken task-token)
                                    (.setDecisions decisions))))
+
+(defn fail-workflow-execution
+  [client decision-task reason details]
+  (let [fail-decision (create-fail-workflow-execution-decision reason
+                                                               details)]
+    (decision-task-completed client
+                             (.getTaskToken decision-task)
+                             fail-decision)))
