@@ -128,10 +128,11 @@
 
 (defn extract-omega-event
   [events alpha-event]
-  (attributes (first (filter #(and (omega-event? %)
-                                   (= (:id (attributes alpha-event))
-                                      (:origin-id (attributes %))))
-                             events))))
+  (when-let [omega-event (first (filter #(and (omega-event? %)
+                                              (= (:id (attributes alpha-event))
+                                                 (:origin-id (attributes %))))
+                                        events))]
+    (attributes omega-event)))
 
 (defn extract-alpha-events
   [events]
