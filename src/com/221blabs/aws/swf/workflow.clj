@@ -1,5 +1,4 @@
-(ns 
-  com.221blabs.aws.swf.workflow
+(ns com.221blabs.aws.swf.workflow
   (:use clj-aws-swf.utils)
   (:require [clj-aws-swf.client :as c]
             [com.221blabs.aws.swf.common :as common]
@@ -70,7 +69,6 @@
     (.setDomain domain)
     (.setExecution wf-execution)))
 
-
 (defn get-execution-history
   "Gets the execution history for a particular Run."
   [client domain wf-id run-id]
@@ -84,7 +82,8 @@
                                                                    run-id))))
 (defn input-for-workflow-execution
   [client domain wf-id run-id]
-  (-> (get-execution-history domain
+  (-> (get-execution-history client
+                             domain
                              wf-id
                              run-id)
       .getEvents
@@ -203,7 +202,6 @@
                                  (populate-list-request (ListClosedWorkflowExecutionsRequest.)
                                                         domain max-page-size
                                                         next-page-token filters)))
-
 
 ;;describe-execution
 ;;DescribeWorkflowExecutionRequest

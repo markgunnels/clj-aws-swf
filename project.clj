@@ -1,4 +1,4 @@
-(defproject clj-aws-swf/clj-aws-swf "1.0.37-SNAPSHOT"
+(defproject clj-aws-swf/clj-aws-swf "1.0.38-SNAPSHOT"
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/core.contracts "0.0.1"]                 
