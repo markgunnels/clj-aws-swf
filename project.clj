@@ -2,7 +2,7 @@
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/core.contracts "0.0.1"]                 
-                 [com.amazonaws/aws-java-sdk "1.4.0.1"]
+                 [com.amazonaws/aws-java-sdk "1.6.0"]
                  [clj-time "0.4.4"]
                  [inflections "0.7.3"]
                  [midje "1.4.0"]]
