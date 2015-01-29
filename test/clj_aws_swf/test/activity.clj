@@ -28,8 +28,8 @@
         pat-r-b (bean pat-r)
         cat-r (complete-activity-task (:taskToken pat-r-b)
                                       "4")]
-    (println (bean swe-r))
-    (println sat-r)
+    (println "SWE: " (bean swe-r))
+    (println "PAT: " pat-r)
     (is (not= nil cat-r))))
 
 (deftest test-cancel-workflow-task
